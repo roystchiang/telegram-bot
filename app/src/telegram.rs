@@ -7,7 +7,7 @@ pub struct Telegram {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Update {
     pub update_id: i32,
-    pub message: Message
+    pub message: Message,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub struct Chat {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MessageEntity{
+pub struct MessageEntity {
     #[serde(rename = "type")]
     pub message_type: String,
     pub offset: i32,
@@ -33,9 +33,8 @@ pub struct MessageEntity{
 #[derive(Serialize, Deserialize)]
 struct SendMessage {
     chat_id: i32,
-    text: String
+    text: String,
 }
-
 
 impl Telegram {
     pub fn new(api_key: &str) -> Self {
@@ -51,11 +50,13 @@ impl Telegram {
             chat_id: chat_id,
             text: message.to_string(),
         };
-        let resp = self.client
+        let resp = self
+            .client
             .post(format!("{}/sendMessage", self.path))
             .json(&message)
             .send()
-            .await.unwrap();
+            .await
+            .unwrap();
         let text = resp.text().await.unwrap();
         info!("response: {}", text);
     }

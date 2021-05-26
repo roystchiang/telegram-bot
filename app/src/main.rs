@@ -1,15 +1,22 @@
-pub mod telegram;
 mod config;
+pub mod telegram;
 
 use std::{env, net::SocketAddr, sync::Arc};
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type Result<T> = std::result::Result<T, GenericError>;
 
-use hyper::{Body, Request, Response, Server, body::Buf, service::{make_service_fn, service_fn}};
-use tokio::sync::{RwLock};
+use hyper::{
+    body::Buf,
+    service::{make_service_fn, service_fn},
+    Body, Request, Response, Server,
+};
+use tokio::sync::RwLock;
 
-use crate::{config::Settings, telegram::{Telegram, Update}};
+use crate::{
+    config::Settings,
+    telegram::{Telegram, Update},
+};
 
 extern crate pretty_env_logger;
 #[macro_use]
@@ -27,9 +34,7 @@ async fn main() {
 
     info!("Starting server");
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-    let client = Telegram::new(
-        &settings.telegram.api_key
-    );
+    let client = Telegram::new(&settings.telegram.api_key);
     let arc_client = Arc::new(RwLock::new(client));
 
     let make_svc = make_service_fn(move |_conn| {
@@ -63,7 +68,6 @@ async fn hello_world(
             info!("Update: {:?}", update);
             let client = telegram.read().await;
             client.send_message(update.message.chat.id, "ack").await;
-
         }
         Err(e) => {
             error!("error: {}", e)
