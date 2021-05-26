@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-size-slug: "lb-small"
+    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "da9adf50-f488-4a26-a2fa-0fe8de846a94"
+    service.beta.kubernetes.io/do-loadbalancer-redirect-http-to-https: "true"
+    service.beta.kubernetes.io/do-loadbalancer-tls-ports: "443"
+  labels:
+    run: webhook
+spec:
+  type: LoadBalancer
+  selector:
+    app: webhook
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 8080
