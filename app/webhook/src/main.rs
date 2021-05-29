@@ -6,11 +6,10 @@ use hyper::{
     service::{make_service_fn, service_fn},
     Server,
 };
-use telegram::{TelegramService, config::Settings};
+use telegram::{config::Settings, TelegramService};
 use tokio::sync::RwLock;
 
 use crate::service::handler;
-
 
 extern crate pretty_env_logger;
 #[macro_use]
