@@ -1,0 +1,10 @@
+[package]
+name = "storage"
+version = "0.1.0"
+authors = ["roychiang"]
+edition = "2018"
+
+[dependencies]
+async-trait = "0.1"
+
+[dev-dependencies]

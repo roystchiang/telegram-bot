@@ -1,5 +1,14 @@
+pub mod config;
+pub mod types;
+
 use async_trait::async_trait;
 use reqwest::Client;
+
+#[macro_use]
+extern crate log;
+
+#[macro_use]
+extern crate serde_derive;
 
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]

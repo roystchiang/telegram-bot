@@ -4,9 +4,9 @@ use hyper::{
     body::{aggregate, Buf},
     Body, Method, Request, Response, StatusCode,
 };
+use telegram::{Telegram, types::Update};
 use tokio::sync::RwLock;
 
-use crate::telegram::{service::Telegram, types::Update};
 
 pub async fn handler(
     req: Request<Body>,
@@ -52,12 +52,25 @@ async fn handle_webhook(
 #[cfg(test)]
 mod test {
     use std::sync::Arc;
+    use mockall::*;
+    use async_trait::async_trait;
 
-    use crate::telegram::service::MockTelegram;
     use hyper::{body::to_bytes, Request, StatusCode};
+    use telegram::Telegram;
     use tokio::sync::RwLock;
 
     use super::handler;
+
+    mock! {
+        Telegram {}
+
+        #[async_trait]
+        impl Telegram for Telegram {
+            async fn send_message(&self, chat_id: i32, message: &str) -> ();
+        }
+    }
+
+
 
     #[tokio::test]
     async fn should_return_400_if_no_input() {

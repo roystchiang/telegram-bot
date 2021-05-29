@@ -1,6 +1,4 @@
-mod config;
 mod service;
-pub mod telegram;
 
 use std::{env, net::SocketAddr, sync::Arc};
 
@@ -8,16 +6,15 @@ use hyper::{
     service::{make_service_fn, service_fn},
     Server,
 };
+use telegram::{TelegramService, config::Settings};
 use tokio::sync::RwLock;
 
-use crate::{config::Settings, service::handler, telegram::service::TelegramService};
+use crate::service::handler;
+
 
 extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
-
-#[macro_use]
-extern crate serde_derive;
 
 #[tokio::main]
 async fn main() {
