@@ -1,0 +1,1 @@
+[![codecov](https://codecov.io/gh/roystchiang/telegram-bot/branch/master/graph/badge.svg?token=TMEI7K49UQ)](https://codecov.io/gh/roystchiang/telegram-bot)
