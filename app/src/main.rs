@@ -10,7 +10,7 @@ use hyper::{
 };
 use tokio::sync::RwLock;
 
-use crate::{config::Settings, service::handler, telegram::TelegramService};
+use crate::{config::Settings, service::handler, telegram::service::TelegramService};
 
 extern crate pretty_env_logger;
 #[macro_use]

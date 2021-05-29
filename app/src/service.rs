@@ -6,7 +6,7 @@ use hyper::{
 };
 use tokio::sync::RwLock;
 
-use crate::telegram::{Telegram, Update};
+use crate::telegram::{service::Telegram, types::Update};
 
 pub async fn handler(
     req: Request<Body>,
@@ -43,9 +43,9 @@ pub async fn handler(
 mod test {
     use std::sync::Arc;
 
-    use crate::telegram::MockTelegram;
+    use crate::telegram::service::MockTelegram;
     use hyper::{
-        body::{to_bytes, HttpBody},
+        body::{to_bytes},
         Request, StatusCode,
     };
     use tokio::sync::RwLock;
