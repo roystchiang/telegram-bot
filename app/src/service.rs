@@ -2,13 +2,23 @@ use std::sync::Arc;
 
 use hyper::{
     body::{aggregate, Buf},
-    Body, Request, Response, StatusCode,
+    Body, Method, Request, Response, StatusCode,
 };
 use tokio::sync::RwLock;
 
 use crate::telegram::{service::Telegram, types::Update};
 
 pub async fn handler(
+    req: Request<Body>,
+    telegram: Arc<RwLock<impl Telegram>>,
+) -> Result<Response<Body>, Box<dyn std::error::Error + Send + Sync>> {
+    match (req.method(), req.uri().path()) {
+        (&Method::GET, "/health") => Ok(Response::new("healthy".into())),
+        _ => handle_webhook(req, telegram).await,
+    }
+}
+
+async fn handle_webhook(
     req: Request<Body>,
     _telegram: Arc<RwLock<impl Telegram>>,
 ) -> Result<Response<Body>, Box<dyn std::error::Error + Send + Sync>> {
@@ -44,10 +54,7 @@ mod test {
     use std::sync::Arc;
 
     use crate::telegram::service::MockTelegram;
-    use hyper::{
-        body::{to_bytes},
-        Request, StatusCode,
-    };
+    use hyper::{body::to_bytes, Request, StatusCode};
     use tokio::sync::RwLock;
 
     use super::handler;
@@ -61,5 +68,16 @@ mod test {
 
         assert_eq!(result.status(), StatusCode::BAD_REQUEST);
         assert_eq!(to_bytes(result).await.unwrap(), "Failed to parse input");
+    }
+
+    #[tokio::test]
+    async fn should_return_200_for_health() {
+        let mock_telegram = Arc::new(RwLock::new(MockTelegram::new()));
+        let request = Request::builder().uri("/health").body("".into()).unwrap();
+
+        let result = handler(request, mock_telegram).await.unwrap();
+
+        assert_eq!(result.status(), StatusCode::OK);
+        assert_eq!(to_bytes(result).await.unwrap(), "healthy");
     }
 }
