@@ -1,4 +1,3 @@
-pub mod inputs;
 
 use std::{net::SocketAddr, sync::Arc};
 

@@ -1,6 +1,6 @@
-use telegram::types::Message;
+use telegram::types::{Update};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct StoreUpdate {
+pub struct SchedulerUpdate {
     pub update: Update,
 }

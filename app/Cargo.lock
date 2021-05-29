@@ -1489,6 +1489,7 @@ dependencies = [
  "mockall",
  "pretty_env_logger",
  "reqwest",
+ "scheduler",
  "serde 1.0.126",
  "serde_derive",
  "serde_json",

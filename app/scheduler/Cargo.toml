@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["roychiang"]
 edition = "2018"
 
+[lib]
+name = "scheduler"
+path = "src/lib.rs"
+
+[[bin]]
+name = "scheduler"
+path = "src/main.rs"
+
 [dependencies]
 telegram = { path = "../telegram" }
 storage = { path = "../storage" }
