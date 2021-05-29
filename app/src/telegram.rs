@@ -1,6 +1,13 @@
+use async_trait::async_trait;
 use reqwest::Client;
 
-pub struct Telegram {
+#[cfg_attr(test, mockall::automock)]
+#[async_trait]
+pub trait Telegram {
+    async fn send_message(&self, chat_id: i32, message: &str) -> ();
+}
+
+pub struct TelegramService {
     client: Client,
     path: String,
 }
@@ -36,15 +43,18 @@ struct SendMessage {
     text: String,
 }
 
-impl Telegram {
+impl TelegramService {
     pub fn new(api_key: &str) -> Self {
-        Telegram {
+        TelegramService {
             client: Client::new(),
             path: format!("https://api.telegram.org/bot{}", api_key),
         }
     }
+}
 
-    pub async fn send_message(&self, chat_id: i32, message: &str) {
+#[async_trait]
+impl Telegram for TelegramService {
+    async fn send_message(&self, chat_id: i32, message: &str) -> () {
         info!("sending message");
         let message = SendMessage {
             chat_id: chat_id,
