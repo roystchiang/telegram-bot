@@ -10,6 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -20,6 +21,26 @@ jobs:
             toolchain: nightly
             override: true
       - name: Build
-        run: cd app && cargo build --verbose
-      - name: Run tests
-        run: cd app && cargo test --verbose
+        uses: actions-rs/cargo@v1 
+        with:
+          command: build
+          args: --verbose --manifest-path=app/Cargo.toml
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+      - name: Tarpualin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.15.0'
+          args: --manifest-path=app/Cargo.toml -- --test-threads 1
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
