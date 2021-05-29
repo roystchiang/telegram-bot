@@ -19,7 +19,7 @@ pub async fn handler(
 
 async fn handle_webhook(
     req: Request<Body>,
-    _telegram: Arc<RwLock<impl Telegram>>,
+    telegram: Arc<RwLock<impl Telegram>>,
 ) -> Result<Response<Body>, Box<dyn std::error::Error + Send + Sync>> {
     let body = match aggregate(req).await {
         Ok(body) => body,
@@ -34,7 +34,9 @@ async fn handle_webhook(
     };
 
     match serde_json::from_reader::<_, Update>(body.reader()) {
-        Ok(_) => {
+        Ok(update) => {
+            let client = telegram.read().await;
+            client.send_message(update.message.chat.id, "ack").await;
             return Ok(Response::new("Ok".into()));
         }
         Err(e) => {
