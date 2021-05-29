@@ -6,7 +6,7 @@ use sled::{open, Db};
 
 use crate::{KeyValue, errors::KeyValueError};
 
-struct SledKeyValue {
+pub struct SledKeyValue {
     db: Db,
 }
 

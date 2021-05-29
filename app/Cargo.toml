@@ -2,5 +2,6 @@
 members = [
     "storage",
     "telegram",
-    "webhook"
+    "webhook",
+    "scheduler"
 ]
