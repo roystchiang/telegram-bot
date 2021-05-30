@@ -13,6 +13,7 @@ name = "scheduler"
 path = "src/main.rs"
 
 [dependencies]
+common = { path = "../common" }
 telegram = { path = "../telegram" }
 storage = { path = "../storage" }
 log = "0.4"

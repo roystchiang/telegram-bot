@@ -5,6 +5,7 @@ authors = ["roychiang"]
 edition = "2018"
 
 [dependencies]
+common = { path = "../common" }
 telegram = { path = "../telegram" }
 scheduler = { path = "../scheduler" }
 log = "0.4"
