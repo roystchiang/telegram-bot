@@ -58,7 +58,10 @@ mod test {
     use std::sync::Arc;
 
     use hyper::{body::to_bytes, Request, StatusCode};
-    use telegram::{Telegram, types::{Chat, Message, Update}};
+    use telegram::{
+        types::{Chat, Message, Update},
+        Telegram,
+    };
     use tokio::sync::RwLock;
 
     use super::handler;
@@ -102,15 +105,16 @@ mod test {
                 update_id: 1,
                 message: Message {
                     message_id: 2,
-                    chat: Chat {
-                        id: 3
-                    },
+                    chat: Chat { id: 3 },
                     text: Some("message".to_string()),
-                    entities: None
-                }
-            }
+                    entities: None,
+                },
+            },
         };
-        let request = Request::builder().uri("/").body(serde_json::to_string(&input).unwrap().into()).unwrap();
+        let request = Request::builder()
+            .uri("/")
+            .body(serde_json::to_string(&input).unwrap().into())
+            .unwrap();
 
         let result = handler(request, mock_telegram).await.unwrap();
 

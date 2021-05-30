@@ -1,4 +1,4 @@
-use telegram::types::{Update};
+use telegram::types::Update;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SchedulerUpdate {

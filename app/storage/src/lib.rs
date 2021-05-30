@@ -1,7 +1,7 @@
-pub mod sled;
 pub mod errors;
+pub mod sled;
 
-use anyhow::{Result};
+use anyhow::Result;
 
 use async_trait::async_trait;
 use errors::KeyValueError;

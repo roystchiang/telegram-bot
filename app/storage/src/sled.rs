@@ -1,10 +1,10 @@
-use std::{path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use sled::{open, Db};
 
-use crate::{KeyValue, errors::KeyValueError};
+use crate::{errors::KeyValueError, KeyValue};
 
 pub struct SledKeyValue {
     db: Db,
@@ -27,7 +27,7 @@ impl KeyValue for SledKeyValue {
             .map(|i_vec| AsRef::<[u8]>::as_ref(&i_vec).to_vec())
             .map(String::from_utf8)
             .transpose()
-            .map_err(|source| KeyValueError::DeserialzeError {source})
+            .map_err(|source| KeyValueError::DeserialzeError { source })
     }
 
     async fn set(&self, key: String, value: String) -> Result<(), KeyValueError> {
@@ -35,7 +35,7 @@ impl KeyValue for SledKeyValue {
             .insert(key, value.into_bytes())
             .and_then(|_| self.db.flush())
             .map(|_| ())
-            .map_err(|source| KeyValueError::OperationError {source})
+            .map_err(|source| KeyValueError::OperationError { source })
     }
 }
 
@@ -53,9 +53,13 @@ mod test {
         let db = SledKeyValue::new(temp_dir.path()).unwrap();
 
         db.set("test-key".to_string(), "some-value".to_string())
-            .await.unwrap();
+            .await
+            .unwrap();
 
-        assert_eq!(db.get("test-key".to_string()).await.unwrap().unwrap(), "some-value")
+        assert_eq!(
+            db.get("test-key".to_string()).await.unwrap().unwrap(),
+            "some-value"
+        )
     }
 
     #[tokio::test]

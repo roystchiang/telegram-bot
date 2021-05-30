@@ -10,5 +10,5 @@ pub enum KeyValueError {
 
     // Represents a failure when deserializing value
     #[error("Deserialize error")]
-    DeserialzeError { source: FromUtf8Error }
+    DeserialzeError { source: FromUtf8Error },
 }

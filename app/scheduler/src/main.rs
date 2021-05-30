@@ -1,9 +1,12 @@
-
 use std::{net::SocketAddr, sync::Arc};
 
-use hyper::{Body, Request, Response, Server, body::{aggregate, Buf}, service::{make_service_fn, service_fn}};
+use hyper::{
+    body::{aggregate, Buf},
+    service::{make_service_fn, service_fn},
+    Body, Request, Response, Server,
+};
 use scheduler::inputs::SchedulerUpdate;
-use storage::{KeyValue, sled::SledKeyValue};
+use storage::{sled::SledKeyValue, KeyValue};
 
 extern crate pretty_env_logger;
 
@@ -28,11 +31,8 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     let make_svc = make_service_fn(|_conn| {
         let storage_clone = arc_storage.clone();
-        async move { 
-            Ok::<_, hyper::Error>(service_fn(move |req| handler(req, storage_clone.clone())))
-        }
+        async move { Ok::<_, hyper::Error>(service_fn(move |req| handler(req, storage_clone.clone()))) }
     });
-
 
     let server = Server::bind(&addr).serve(make_svc);
     if let Err(e) = server.await {
@@ -47,7 +47,15 @@ async fn handler(
     let body = aggregate(req).await?;
     let data = serde_json::from_reader::<_, SchedulerUpdate>(body.reader())?;
 
-    storage.set(data.update.update_id.to_string(), data.update.message.text.unwrap_or("empty message".to_string())).await?;
+    storage
+        .set(
+            data.update.update_id.to_string(),
+            data.update
+                .message
+                .text
+                .unwrap_or("empty message".to_string()),
+        )
+        .await?;
     println!("{:?}", data.update.update_id.to_string());
     Ok(Response::new("done".into()))
 }
@@ -65,7 +73,6 @@ mod test {
 
     use crate::handler;
 
-
     #[tokio::test]
     async fn should_store_received_message_update() {
         let db = get_db();
@@ -74,15 +81,15 @@ mod test {
                 update_id: 1,
                 message: Message {
                     message_id: 2,
-                    chat: Chat {
-                        id: 3
-                    },
+                    chat: Chat { id: 3 },
                     text: Some("message".to_string()),
-                    entities: None
-                }
-            }
+                    entities: None,
+                },
+            },
         };
-        let request = Request::builder().body(serde_json::to_string(&input).unwrap().into()).unwrap();
+        let request = Request::builder()
+            .body(serde_json::to_string(&input).unwrap().into())
+            .unwrap();
 
         let request_result = handler(request, db.clone()).await.unwrap();
         let db_value = db.clone().get("1".to_string()).await.unwrap();
@@ -95,5 +102,4 @@ mod test {
         let temp_dir = TempDir::new().expect("unable to create temp directory");
         Arc::new(SledKeyValue::new(temp_dir.path()).unwrap())
     }
-
 }
