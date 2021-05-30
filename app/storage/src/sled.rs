@@ -53,7 +53,7 @@ mod test {
         let db = SledKeyValue::new(temp_dir.path()).unwrap();
 
         db.set("test-key".to_string(), "some-value".to_string())
-            .await;
+            .await.unwrap();
 
         assert_eq!(db.get("test-key".to_string()).await.unwrap().unwrap(), "some-value")
     }

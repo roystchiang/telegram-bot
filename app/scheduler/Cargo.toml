@@ -28,3 +28,4 @@ async-trait = "0.1"
 
 [dev-dependencies]
 mockall = { version = "0.9.1", features = ["nightly"] }
+tempfile = "3.2"
