@@ -1,0 +1,4 @@
+pub mod inputs;
+
+#[macro_use]
+extern crate serde_derive;

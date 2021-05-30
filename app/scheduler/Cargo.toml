@@ -1,12 +1,20 @@
 [package]
-name = "webhook"
+name = "scheduler"
 version = "0.1.0"
 authors = ["roychiang"]
 edition = "2018"
 
+[lib]
+name = "scheduler"
+path = "src/lib.rs"
+
+[[bin]]
+name = "scheduler"
+path = "src/main.rs"
+
 [dependencies]
 telegram = { path = "../telegram" }
-scheduler = { path = "../scheduler" }
+storage = { path = "../storage" }
 log = "0.4"
 pretty_env_logger = "0.4"
 reqwest = { version = "0.11", features= ["json"] }
@@ -20,3 +28,4 @@ async-trait = "0.1"
 
 [dev-dependencies]
 mockall = { version = "0.9.1", features = ["nightly"] }
+tempfile = "3.2"

@@ -980,6 +980,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "scheduler"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "config",
+ "hyper",
+ "log",
+ "mockall",
+ "pretty_env_logger",
+ "reqwest",
+ "serde 1.0.126",
+ "serde_derive",
+ "serde_json",
+ "storage",
+ "telegram",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1470,6 +1490,7 @@ dependencies = [
  "mockall",
  "pretty_env_logger",
  "reqwest",
+ "scheduler",
  "serde 1.0.126",
  "serde_derive",
  "serde_json",

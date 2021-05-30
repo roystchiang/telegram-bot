@@ -18,7 +18,8 @@ RUN apk update \
     && rm -rf /var/cache/apk/*
 
 COPY --from=builder /home/rust/src/telegram/target/x86_64-unknown-linux-musl/release/webhook ${APP}/webhook
+COPY --from=builder /home/rust/src/telegram/target/x86_64-unknown-linux-musl/release/scheduler ${APP}/scheduler
 
 WORKDIR ${APP}
 
-ENTRYPOINT ["./webhook"]
+# ENTRYPOINT ["./webhook"]

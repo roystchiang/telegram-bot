@@ -54,10 +54,14 @@ async fn handle_webhook(
 mod test {
     use async_trait::async_trait;
     use mockall::*;
+    use scheduler::inputs::SchedulerUpdate;
     use std::sync::Arc;
 
     use hyper::{body::to_bytes, Request, StatusCode};
-    use telegram::Telegram;
+    use telegram::{
+        types::{Chat, Message, Update},
+        Telegram,
+    };
     use tokio::sync::RwLock;
 
     use super::handler;
@@ -91,5 +95,29 @@ mod test {
 
         assert_eq!(result.status(), StatusCode::OK);
         assert_eq!(to_bytes(result).await.unwrap(), "healthy");
+    }
+
+    #[tokio::test]
+    async fn should_return_400_if_given_invalid_input() {
+        let mock_telegram = Arc::new(RwLock::new(MockTelegram::new()));
+        let input = SchedulerUpdate {
+            update: Update {
+                update_id: 1,
+                message: Message {
+                    message_id: 2,
+                    chat: Chat { id: 3 },
+                    text: Some("message".to_string()),
+                    entities: None,
+                },
+            },
+        };
+        let request = Request::builder()
+            .uri("/")
+            .body(serde_json::to_string(&input).unwrap().into())
+            .unwrap();
+
+        let result = handler(request, mock_telegram).await.unwrap();
+
+        assert_eq!(result.status(), StatusCode::BAD_REQUEST);
     }
 }
