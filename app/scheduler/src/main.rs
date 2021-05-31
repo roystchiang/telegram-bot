@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::{net::SocketAddr, sync::Arc};
 mod service;
 
@@ -22,15 +23,10 @@ async fn main() {
     pretty_env_logger::init();
     info!("Starting server");
 
-    let storage = match SledKeyValue::new("data") {
-        Ok(storage) => storage,
-        Err(e) => {
-            error!("Failed to initialize sled storage: {}", e);
-            panic!()
-        }
-    };
-    let arc_storage = Arc::new(storage);
-    let common_server = Arc::new(CommonServer::new(SchedulerService::new(arc_storage)));
+    let path = PathBuf::from("data");
+    let common_server = Arc::new(CommonServer::new(SchedulerService::<SledKeyValue>::new(
+        path,
+    )));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     let make_svc = make_service_fn(move |_conn| {

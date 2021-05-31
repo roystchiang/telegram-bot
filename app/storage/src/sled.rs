@@ -10,17 +10,14 @@ pub struct SledKeyValue {
     db: Db,
 }
 
-impl SledKeyValue {
-    pub fn new(path: impl Into<PathBuf>) -> Result<Self> {
-        let path = path.into();
-        let db = open(&path).context(format!("unable to open db '{:?}'", path.to_str()))?;
+#[async_trait]
+impl KeyValue for SledKeyValue {
+    fn new(path: &PathBuf) -> Result<Self> {
+        let db = open(path).context(format!("unable to open db '{:?}'", path.to_str()))?;
 
         Ok(Self { db })
     }
-}
 
-#[async_trait]
-impl KeyValue for SledKeyValue {
     async fn get(&self, key: String) -> Result<Option<String>, KeyValueError> {
         let value = self.db.get(key).unwrap();
         value
@@ -41,6 +38,8 @@ impl KeyValue for SledKeyValue {
 
 #[cfg(test)]
 mod test {
+    use std::fs;
+
     use tempfile::TempDir;
 
     use crate::KeyValue;
@@ -49,8 +48,10 @@ mod test {
 
     #[tokio::test]
     async fn should_return_key() {
-        let temp_dir = TempDir::new().expect("unable to create temp directory");
-        let db = SledKeyValue::new(temp_dir.path()).unwrap();
+        let temp_dir = TempDir::new()
+            .expect("unable to create temp directory")
+            .into_path();
+        let db = SledKeyValue::new(&temp_dir).unwrap();
 
         db.set("test-key".to_string(), "some-value".to_string())
             .await
@@ -59,16 +60,20 @@ mod test {
         assert_eq!(
             db.get("test-key".to_string()).await.unwrap().unwrap(),
             "some-value"
-        )
+        );
+        fs::remove_dir_all(temp_dir).unwrap();
     }
 
     #[tokio::test]
     async fn should_not_fail_if_key_does_not_exist() {
-        let temp_dir = TempDir::new().expect("unable to create temp directory");
-        let db = SledKeyValue::new(temp_dir.path()).unwrap();
+        let temp_dir = TempDir::new()
+            .expect("unable to create temp directory")
+            .into_path();
+        let db = SledKeyValue::new(&temp_dir).unwrap();
 
         let value = db.get("random key".to_string()).await;
 
-        assert_eq!(value.unwrap(), None)
+        assert_eq!(value.unwrap(), None);
+        fs::remove_dir_all(temp_dir).unwrap();
     }
 }
