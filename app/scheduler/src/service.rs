@@ -57,7 +57,6 @@ impl<T: KeyValue> SchedulerService<T> {
     fn get_kv_path(&self, user_id: &str) -> PathBuf {
         let mut kv_store_path = (&self.path).clone();
         kv_store_path.push(user_id);
-        println!("{:?}", kv_store_path);
         kv_store_path
     }
 }
@@ -82,10 +81,7 @@ impl<T: KeyValue + Send + Sync> Server for SchedulerService<T> {
             .clone()
             .set(
                 data.update.update_id.to_string(),
-                data.update
-                    .message
-                    .text
-                    .unwrap_or("empty message".to_string()),
+                serde_json::to_string(&data.update)?,
             )
             .await?;
 
@@ -97,11 +93,9 @@ impl<T: KeyValue + Send + Sync> Server for SchedulerService<T> {
 #[cfg(test)]
 mod test {
     use std::fs;
-    use std::path::Path;
-    use std::path::PathBuf;
-    use std::sync::Arc;
 
     use common::Server;
+    use hyper::Body;
     use hyper::{Request, StatusCode};
     use scheduler::inputs::SchedulerUpdate;
     use storage::sled::SledKeyValue;
@@ -112,25 +106,12 @@ mod test {
     use crate::service::SchedulerService;
 
     #[tokio::test]
-    async fn should_store_received_message_update() {
+    async fn should_create_user_specific_store() {
         let temp_dir = TempDir::new()
             .expect("unable to create temp directory")
             .into_path();
         let server = SchedulerService::<SledKeyValue>::new(temp_dir.clone());
-        let input = SchedulerUpdate {
-            update: Update {
-                update_id: 1,
-                message: Message {
-                    message_id: 2,
-                    chat: Chat { id: 3 },
-                    text: Some("message".to_string()),
-                    entities: None,
-                },
-            },
-        };
-        let request = Request::builder()
-            .body(serde_json::to_string(&input).unwrap().into())
-            .unwrap();
+        let request = generate_request(1, 3);
 
         let request_result = server.serve(request).await.unwrap();
         let storage_keys = server.list_all_users().await;
@@ -138,5 +119,44 @@ mod test {
         assert_eq!(request_result.status(), StatusCode::OK);
         assert_eq!(storage_keys, ["3"]);
         fs::remove_dir_all(temp_dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn should_be_able_to_deserialize_message() {
+        let temp_dir = TempDir::new()
+            .expect("unable to create temp directory")
+            .into_path();
+        let server = SchedulerService::<SledKeyValue>::new(temp_dir.clone());
+        let request = generate_request(1, 3);
+
+        server.serve(request).await.unwrap();
+        let stored_value = server
+            .get_user_storage("3")
+            .await
+            .unwrap()
+            .get("1".to_string())
+            .await
+            .unwrap()
+            .unwrap();
+
+        let _: Update = serde_json::from_str(&stored_value).unwrap();
+        fs::remove_dir_all(temp_dir).unwrap();
+    }
+
+    fn generate_request(update_id: i32, chat_id: i32) -> Request<Body> {
+        let input = SchedulerUpdate {
+            update: Update {
+                update_id,
+                message: Message {
+                    message_id: 2,
+                    chat: Chat { id: chat_id },
+                    text: Some("message".to_string()),
+                    entities: None,
+                },
+            },
+        };
+        Request::builder()
+            .body(serde_json::to_string(&input).unwrap().into())
+            .unwrap()
     }
 }
