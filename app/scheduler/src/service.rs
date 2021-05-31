@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -6,18 +8,57 @@ use hyper::{body::aggregate, Body, Request, Response};
 use scheduler::inputs::SchedulerUpdate;
 use storage::KeyValue;
 
+use anyhow::Result;
 use common::Server;
+use tokio::sync::RwLock;
 
 pub struct SchedulerService<T>
 where
     T: KeyValue,
 {
-    storage: Arc<T>,
+    path: PathBuf,
+    storage: Arc<RwLock<BTreeMap<String, Arc<T>>>>,
 }
 
 impl<T: KeyValue> SchedulerService<T> {
-    pub fn new(storage: Arc<T>) -> Self {
-        Self { storage }
+    pub fn new(path: PathBuf) -> Self {
+        Self {
+            path,
+            storage: Arc::new(RwLock::new(BTreeMap::new())),
+        }
+    }
+
+    async fn add_user_storage(&self, user_id: &str) -> Result<Arc<T>> {
+        let mut storage = self.storage.write().await;
+        // read again to make sure that another thread has not created the KV store before we got the lock
+        match storage.get(user_id) {
+            Some(kv) => Ok(kv.clone()),
+            None => {
+                let kv_store_path = self.get_kv_path(user_id);
+                let kv_store: Arc<T> = Arc::new(T::new(&kv_store_path)?);
+                storage.insert(user_id.to_string(), kv_store.clone());
+                Ok(kv_store.clone())
+            }
+        }
+    }
+
+    async fn get_user_storage(&self, user_id: &str) -> Option<Arc<T>> {
+        let storage_read = self.storage.read().await;
+        match storage_read.get(user_id) {
+            Some(kv) => Some(kv.clone()),
+            None => None,
+        }
+    }
+
+    async fn list_all_users(&self) -> Vec<String> {
+        self.storage.read().await.keys().cloned().collect()
+    }
+
+    fn get_kv_path(&self, user_id: &str) -> PathBuf {
+        let mut kv_store_path = (&self.path).clone();
+        kv_store_path.push(user_id);
+        println!("{:?}", kv_store_path);
+        kv_store_path
     }
 }
 
@@ -31,7 +72,14 @@ impl<T: KeyValue + Send + Sync> Server for SchedulerService<T> {
         let body = aggregate(request).await?;
         let data = serde_json::from_reader::<_, SchedulerUpdate>(body.reader())?;
 
-        self.storage
+        let storage_key = data.update.message.chat.id.to_string();
+        let storage = self
+            .get_user_storage(&storage_key)
+            .await
+            .unwrap_or(self.add_user_storage(&storage_key).await?);
+
+        storage
+            .clone()
             .set(
                 data.update.update_id.to_string(),
                 data.update
@@ -40,6 +88,7 @@ impl<T: KeyValue + Send + Sync> Server for SchedulerService<T> {
                     .unwrap_or("empty message".to_string()),
             )
             .await?;
+
         println!("{:?}", data.update.update_id.to_string());
         Ok(Response::new("done".into()))
     }
@@ -47,6 +96,9 @@ impl<T: KeyValue + Send + Sync> Server for SchedulerService<T> {
 
 #[cfg(test)]
 mod test {
+    use std::fs;
+    use std::path::Path;
+    use std::path::PathBuf;
     use std::sync::Arc;
 
     use common::Server;
@@ -61,8 +113,10 @@ mod test {
 
     #[tokio::test]
     async fn should_store_received_message_update() {
-        let db = get_db();
-        let server = SchedulerService::new(db.clone());
+        let temp_dir = TempDir::new()
+            .expect("unable to create temp directory")
+            .into_path();
+        let server = SchedulerService::<SledKeyValue>::new(temp_dir.clone());
         let input = SchedulerUpdate {
             update: Update {
                 update_id: 1,
@@ -79,14 +133,10 @@ mod test {
             .unwrap();
 
         let request_result = server.serve(request).await.unwrap();
-        let db_value = db.clone().get("1".to_string()).await.unwrap();
+        let storage_keys = server.list_all_users().await;
 
         assert_eq!(request_result.status(), StatusCode::OK);
-        assert_eq!(db_value, Some("message".to_string()));
-    }
-
-    fn get_db() -> Arc<SledKeyValue> {
-        let temp_dir = TempDir::new().expect("unable to create temp directory");
-        Arc::new(SledKeyValue::new(temp_dir.path()).unwrap())
+        assert_eq!(storage_keys, ["3"]);
+        fs::remove_dir_all(temp_dir).unwrap();
     }
 }
